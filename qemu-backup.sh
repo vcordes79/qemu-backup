@@ -12,7 +12,7 @@ if [ $DOM -eq 1 ]; then
   qemu-backup.py --interval monthly $*
 fi
 
-if [ $DOW -eq 0 ]; then
+if [ $DOW -eq 7 ]; then
   qemu-backup.py --interval weekly $*
 fi
 
