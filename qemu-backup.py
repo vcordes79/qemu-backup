@@ -104,12 +104,16 @@ def img_copy_to_backup_dir(filename, new_filename, args):
         raise ValueError(newpath.name + ' already exists in backup dir. Please clean up manually.')
     if args.compress:
         backing_file = get_backing_file(filename)
-        print(['qemu-img', 'convert', '-c', '-f', 'qcow2', '-O', 'qcow2', '-B', backing_file, filename, args.backup_dir+'/'+new_filename])
         info_output = subprocess.run(['qemu-img', 'convert', '-c', '-f', 'qcow2', '-O', 'qcow2', '-B', backing_file, filename, args.backup_dir+'/'+new_filename], stdout=subprocess.PIPE, universal_newlines=True)
         if info_output.returncode != 0:
             raise Exception('Error compressing ' + filename)
-    else:
+    elif args.copy:
         shutil.copy(filename, args.backup_dir+'/'+new_filename)
+    else:
+        backing_file = get_backing_file(filename)
+        info_output = subprocess.run(['qemu-img', 'convert', '-f', 'qcow2', '-O', 'qcow2', '-B', backing_file, filename, args.backup_dir+'/'+new_filename], stdout=subprocess.PIPE, universal_newlines=True)
+        if info_output.returncode != 0:
+            raise Exception('Error converting ' + filename)
 
 def img_rebase(image, new_backing_file):
     stat = os.stat(image)
@@ -391,6 +395,7 @@ if __name__ == '__main__':
     parser.add_argument('--intervals', dest='intervals', action='store', default='daily:7,weekly:4,monthly,yearly:10', help='Comma separated list of backup intervals and number of backups to keep (default: daily:7,weekly:4,monthly:12,yearly:10)')
     parser.add_argument('--interval', dest='interval', action='store', default='', help='Backup interval (default: lowest)')
     parser.add_argument('--new-chain', dest='new_chain', action='store_true', default=False, help='create new backup chain (default: no)')
+    parser.add_argument('--copy', dest='copy', action='store_true', default=False, help='copy file instead of using qemu-img convert, ignored if compression is enabled (default: no)')
     parser.add_argument('--compress', dest='compress', action='store_true', default=False, help='use qemu-img convert to compress image files (default: no)')
     parser.add_argument('--omit-unsafe', dest='omit_unsafe', action='store_true', default=False, help='do not use -U on qemu-img info (default: no)')
     args = parser.parse_args()
