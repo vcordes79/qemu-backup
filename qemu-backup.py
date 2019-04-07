@@ -115,9 +115,9 @@ def img_copy_to_backup_dir(filename, new_filename, args):
         if info_output.returncode != 0:
             raise Exception('Error converting ' + filename)
 
-def img_rebase(image, new_backing_file):
+def img_rebase(image, backing_file_dir, new_backing_file):
     stat = os.stat(image)
-    info_output = subprocess.run(['qemu-img', 'rebase', '-u', '-b', new_backing_file, image], stdout=subprocess.PIPE, universal_newlines=True)
+    info_output = subprocess.run(['qemu-img', 'rebase', '-u', '-b', new_backing_file, image], stdout=subprocess.PIPE, universal_newlines=True, cwd=backing_file_dir)
     if info_output.returncode != 0:
         raise Exception('Error rebasing ' + image + ' on ' + new_backing_file)
     os.utime(image, (stat.st_atime, stat.st_mtime))
@@ -160,14 +160,14 @@ def img_rotate_interval(vm_name, backupset, interval, dev_to_commit, vm_info, ar
         new_name = '.'.join(imgdata_base)
         img_rename(args.backup_dir + '/' + baseimage, args.backup_dir + '/' + new_name)
         images[top] = new_name
-        img_rebase(args.backup_dir + '/' + images[top-1], args.backup_dir + '/' + new_name)
+        img_rebase(args.backup_dir + '/' + images[top-1], args.backup_dir, new_name)
 
     for i in range(len(images)-1, -1, -1):
         old_filename = images[i]
         new_filename = old_filename.replace("%s.%d" % (interval_name, i), "%s.%d" % (interval_name, i+1))
         img_rename(args.backup_dir + '/' + old_filename, args.backup_dir + '/' + new_filename)
         if i != len(images) - 1:
-            img_rebase(args.backup_dir + '/' + new_filename, args.backup_dir + '/' + images[i+1].replace("%s.%d" % (interval_name, i+1), "%s.%d" % (interval_name, i+2)))
+            img_rebase(args.backup_dir + '/' + new_filename, args.backup_dir, images[i+1].replace("%s.%d" % (interval_name, i+1), "%s.%d" % (interval_name, i+2)))
         images[i+1] = new_filename
 
     del images[0]
@@ -244,10 +244,10 @@ def vm_snapshot(libvirt_conn, vm_name, vm_info, vm_devs, devs_to_snapshot, backu
             new_name = "%s.b%03d.%s.i%05d.%s.%d.img" % (vm_name, backupset, dev, vm_info[dev]['nr'], args.intervals[0][0], 0)
             img_copy_to_backup_dir(vm_info[dev]['chain'][0], new_name, args)
             if vm_info[dev]['nr']-1 == 0:
-                baseimage = args.backup_dir + '/' + "%s.b%03d.%s.base.img" % (vm_name, backupset, dev)
+                baseimage = "%s.b%03d.%s.base.img" % (vm_name, backupset, dev)
             else:
-                baseimage = args.backup_dir + '/' + "%s.b%03d.%s.i%05d.%s.%d.img" % (vm_name, backupset, dev, vm_info[dev]['nr']-1, args.intervals[0][0], 1)
-            img_rebase(args.backup_dir + '/' + new_name, baseimage)
+                baseimage = "%s.b%03d.%s.i%05d.%s.%d.img" % (vm_name, backupset, dev, vm_info[dev]['nr']-1, args.intervals[0][0], 1)
+            img_rebase(args.backup_dir + '/' + new_name, args.backup_dir, baseimage)
 
 def vm_backup(libvirt_conn, vm, args):
     blockdevs = vm_get_blockdevs(libvirt_conn, vm[0])
@@ -333,9 +333,10 @@ def vm_backup(libvirt_conn, vm, args):
                 img_rename(args.backup_dir + '/' + old_filename, args.backup_dir + '/' + new_filename)
                 del archive_info[vm[0]][backupset][dev]['images'][interval_name][lowest_image]
                 archive_info[vm[0]][backupset][dev]['images'][new_interval_name][0] = new_filename
-                img_rebase(args.backup_dir + '/' + archive_info[vm[0]][backupset][dev]['images'][interval_name][lowest_image-1], args.backup_dir + '/' + new_filename)
+                img_rebase(args.backup_dir + '/' + archive_info[vm[0]][backupset][dev]['images'][interval_name][lowest_image-1], args.backup_dir, new_filename)
                 if 1 in archive_info[vm[0]][backupset][dev]['images'][new_interval_name]:
-                    img_rebase(args.backup_dir + '/' + new_filename, archive_info[vm[0]][backupset][dev]['images'][new_interval_name][1])
+                    img_path = Path(archive_info[vm[0]][backupset][dev]['images'][new_interval_name][1])
+                    img_rebase(args.backup_dir + '/' + new_filename, img_path.parent.as_posix(), img_path.name)
             else:
                 img_rotate_interval(vm[0], active_backupset, interval, dev, vm_info, args)
 
