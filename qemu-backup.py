@@ -335,8 +335,7 @@ def vm_backup(libvirt_conn, vm, args):
                 archive_info[vm[0]][backupset][dev]['images'][new_interval_name][0] = new_filename
                 img_rebase(args.backup_dir + '/' + archive_info[vm[0]][backupset][dev]['images'][interval_name][lowest_image-1], args.backup_dir, new_filename)
                 if 1 in archive_info[vm[0]][backupset][dev]['images'][new_interval_name]:
-                    img_path = Path(archive_info[vm[0]][backupset][dev]['images'][new_interval_name][1])
-                    img_rebase(args.backup_dir + '/' + new_filename, img_path.parent.as_posix(), img_path.name)
+                    img_rebase(args.backup_dir + '/' + new_filename, args.backup_dir, archive_info[vm[0]][backupset][dev]['images'][new_interval_name][1])
             else:
                 img_rotate_interval(vm[0], active_backupset, interval, dev, vm_info, args)
 
