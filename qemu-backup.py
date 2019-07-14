@@ -9,11 +9,22 @@ import time
 import argparse
 import subprocess
 import os
+import fcntl
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
 archive_info = { }
 omit_unsafe = False
+
+def lock_acquire(lpath):
+  fd = None
+  try:
+    fd = os.open(lpath, os.O_CREAT)
+    fcntl.flock(fd, fcntl.LOCK_NB | fcntl.LOCK_EX)
+    return True
+  except (OSError, IOError):
+    if fd: os.close(fd)
+    return False
 
 def check_backup_chain(domain, backupset, devs_to_check):
     if not domain in archive_info or not backupset in archive_info[domain]:
@@ -402,6 +413,10 @@ if __name__ == '__main__':
     parser.add_argument('--compress', dest='compress', action='store_true', default=False, help='use qemu-img convert to compress image files (default: no)')
     parser.add_argument('--omit-unsafe', dest='omit_unsafe', action='store_true', default=False, help='do not use -U on qemu-img info (default: no)')
     args = parser.parse_args()
+
+    if not prog_lock_acq('/tmp/qemu-backup.lock'):
+        print("another instance is running")
+        exit(1)
 
     args.intervals = args.intervals.split(',')
     intervals = []
