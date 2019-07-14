@@ -414,7 +414,7 @@ if __name__ == '__main__':
     parser.add_argument('--omit-unsafe', dest='omit_unsafe', action='store_true', default=False, help='do not use -U on qemu-img info (default: no)')
     args = parser.parse_args()
 
-    if not prog_lock_acq('/tmp/qemu-backup.lock'):
+    if not lock_acquire('/tmp/qemu-backup.lock'):
         print("another instance is running")
         exit(1)
 
