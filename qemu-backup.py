@@ -18,7 +18,7 @@ omit_unsafe = False
 def check_backup_chain(domain, backupset, devs_to_check):
     if not domain in archive_info or not backupset in archive_info[domain]:
         return
-    print(archive_info[domain][backupset])
+#    print(archive_info[domain][backupset])
     for drive in devs_to_check:
         for interval in archive_info[domain][backupset][drive]['images']:
             image_count = len(archive_info[domain][backupset][drive]['images'][interval])
@@ -89,7 +89,7 @@ def get_backup_chain(backup_dir, vm_name):
         if not imgdata[1] in chain:
             chain[imgdata[1]] = {}
         chain[imgdata[1]][image.name] = imgdata
-        print(imgdata)
+#        print(imgdata)
 
     return chain
 
