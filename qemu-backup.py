@@ -79,6 +79,9 @@ def get_backing_file(image):
     bf = info['backing file'].split(' ')
     bf_path = Path(bf[0])
 
+    if "/" in bf[0] and p.parent.as_posix() != bf_path.parent.as_posix():
+        img_rebase(image, p.parent.as_posix(), bf_path.name)
+
     return p.parent.as_posix() + '/' + bf_path.name
 
 def get_snapshot_chain(image):
