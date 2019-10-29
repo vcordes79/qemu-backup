@@ -128,7 +128,10 @@ def img_copy_to_backup_dir(filename, new_filename, args):
         shutil.copy(filename, args.backup_dir+'/'+new_filename)
     else:
         backing_file = get_backing_file(filename)
-        info_output = subprocess.run(['qemu-img', 'convert', '-f', 'qcow2', '-O', 'qcow2', '-B', backing_file, filename, args.backup_dir+'/'+new_filename], stdout=subprocess.PIPE, universal_newlines=True)
+        if backing_file:
+            info_output = subprocess.run(['qemu-img', 'convert', '-f', 'qcow2', '-O', 'qcow2', '-B', backing_file, filename, args.backup_dir+'/'+new_filename], stdout=subprocess.PIPE, universal_newlines=True)
+        else:
+            info_output = subprocess.run(['qemu-img', 'convert', '-f', 'qcow2', '-O', 'qcow2', filename, args.backup_dir+'/'+new_filename], stdout=subprocess.PIPE, universal_newlines=True)
         if info_output.returncode != 0:
             raise Exception('Error converting ' + filename)
 
