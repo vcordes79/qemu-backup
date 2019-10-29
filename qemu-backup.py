@@ -115,7 +115,7 @@ def img_rename(old_filename, new_filename):
 def img_copy_to_backup_dir(filename, new_filename, args):
     new_path = Path(args.backup_dir + '/' + new_filename)
     if new_path.exists():
-        raise ValueError(newpath.name + ' already exists in backup dir. Please clean up manually.')
+        raise ValueError(new_path.name + ' already exists in backup dir. Please clean up manually.')
     if args.compress:
         backing_file = get_backing_file(filename)
         if backing_file:
