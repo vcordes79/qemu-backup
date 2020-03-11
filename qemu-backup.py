@@ -236,6 +236,23 @@ def vm_commit_all(libvirt_conn, vm_name, vm_info, devs_to_commit, args):
                 os.unlink(img)
         vm_info[dev]['chain'] = chain
 
+def vm_trim(libvirt_conn, vm_name):
+    try:
+        vm = libvirt_conn.lookupByName(vm_name)
+    except libvirt.libvirtError as e:
+        # Error code 42 = Domain not found
+        if (e.get_error_code() == 42):
+            print(e)
+            exit(1)
+        else:
+            raise(e)
+    try:
+        vm.FSTrim(None, 0, 0)
+        time.sleep(240)
+    except libvirt.libvirtError as e:
+        print('Warning')
+        print(e)
+
 def vm_snapshot(libvirt_conn, vm_name, vm_info, vm_devs, devs_to_snapshot, backupset, args):
     try:
         vm = libvirt_conn.lookupByName(vm_name)
@@ -320,6 +337,7 @@ def vm_backup(libvirt_conn, vm, args):
     # backup base image
     if len(incomplete_snapshots) > 0 or args.new_chain:
         vm_commit_all(libvirt_conn, vm[0], vm_info, incomplete_snapshots, args)
+        vm_trim(libvirt_conn, vm[0])
         vm_snapshot(libvirt_conn, vm[0], vm_info, blockdevs, incomplete_snapshots, active_backupset, args)
     else:
         # move existing backups to make room for new incremental
@@ -361,6 +379,7 @@ def vm_backup(libvirt_conn, vm, args):
 
         if interval == 0:
             # create incremental snapshot
+            vm_trim(libvirt_conn, vm[0])
             vm_snapshot(libvirt_conn, vm[0], vm_info, blockdevs, vm[1], active_backupset, args)
             vm_commit_first(libvirt_conn, vm[0], vm_info, vm[1], args)
 
