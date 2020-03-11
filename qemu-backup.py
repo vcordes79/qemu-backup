@@ -247,7 +247,7 @@ def vm_trim(libvirt_conn, vm_name):
         else:
             raise(e)
     try:
-        vm.FSTrim(None, 0, 0)
+        vm.fSTrim(None, 0, 0)
         time.sleep(240)
     except libvirt.libvirtError as e:
         print('Warning')
