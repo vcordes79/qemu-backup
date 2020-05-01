@@ -35,7 +35,7 @@ def check_backup_chain(domain, backupset, devs_to_check, args):
             if interval == 'daily' and 0 not in archive_info[domain][backupset][drive]['images'][interval]:
                 num = 1
                 while num in archive_info[domain][backupset][drive]['images'][interval]:
-                    filename = archive_info[domain][backupset][drive]['images'][interval];
+                    filename = archive_info[domain][backupset][drive]['images'][interval][num];
                     newfilename = filename.replace('.'+str(num)+'.img', '.'+str(num-1)+'.img')
                     os.rename(args.backup_dir + '/' + filename, args.backup_dir + '/' + newfilename)
                     archive_info[domain][backupset][drive]['images'][interval][num-1] = filename.replace('.'+str(num)+'.img', '.'+str(num-1)+'.img')
