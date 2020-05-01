@@ -26,12 +26,21 @@ def lock_acquire(lpath):
     if fd: os.close(fd)
     return False
 
-def check_backup_chain(domain, backupset, devs_to_check):
+def check_backup_chain(domain, backupset, devs_to_check, args):
     if not domain in archive_info or not backupset in archive_info[domain]:
         return
 #    print(archive_info[domain][backupset])
     for drive in devs_to_check:
         for interval in archive_info[domain][backupset][drive]['images']:
+            if interval == 'daily' and 0 not in archive_info[domain][backupset][drive]['images'][interval]:
+                num = 1
+                while num in archive_info[domain][backupset][drive]['images'][interval]:
+                    filename = archive_info[domain][backupset][drive]['images'][interval];
+                    newfilename = filename.replace('.'+str(num)+'.img', '.'+str(num-1)+'.img')
+                    os.rename(args.backup_dir + '/' + filename, args.backup_dir + '/' + newfilename)
+                    archive_info[domain][backupset][drive]['images'][interval][num-1] = filename.replace('.'+str(num)+'.img', '.'+str(num-1)+'.img')
+                    del archive_info[domain][backupset][drive]['images'][interval][num]
+                    num = num + 1
             image_count = len(archive_info[domain][backupset][drive]['images'][interval])
             if interval != 'base' and image_count != max(archive_info[domain][backupset][drive]['images'][interval].keys()) + 1:
                 raise Exception('Images missing in backup chain for interval ' + interval)
@@ -332,7 +341,7 @@ def vm_backup(libvirt_conn, vm, args):
         args.new_chain = True
         incomplete_snapshots = vm[1]
 
-    check_backup_chain(vm[0], "b%03d" % (active_backupset), vm[1])
+    check_backup_chain(vm[0], "b%03d" % (active_backupset), vm[1], args)
 
     # backup base image
     if len(incomplete_snapshots) > 0 or args.new_chain:
